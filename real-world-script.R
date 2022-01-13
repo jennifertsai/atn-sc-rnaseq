@@ -78,6 +78,9 @@ merged_counts <- FindClusters(merged_counts, resolution = 0.5)
 #See cluster IDs of first 5 cells
 head(Idents(merged_counts), 5)
 
+#Visualize PCs after clustering
+DimPlot(merged_counts, reduction = "pca")
+
 #---NONLINEAR DIM REDUCTION---
 merged_counts <- RunUMAP(merged_counts, dims = 1:10)
 
@@ -110,9 +113,36 @@ head(cluster6.markers, 50)
 cluster7.markers <- FindMarkers(merged_counts, 7)
 head(cluster7.markers, 50)
 
+clusterL.markers <- FindMarkers(merged_counts, ident.1=c(0,1,2,3,4))
+head(clusterL.markers, 50)
 
 #Generate feature plots for specific genes
 FeaturePlot(merged_counts, "Snap25")
 FeaturePlot(merged_counts, "Gad1")
 FeaturePlot(merged_counts, "Slc17a7")
 FeaturePlot(merged_counts, "Slc17a6")
+
+#Generate feature plots for specific genes found in clusters
+#From cluster 1
+FeaturePlot(merged_counts, "Car4")
+FeaturePlot(merged_counts, "Eps8l2")
+FeaturePlot(merged_counts, "Rgs6")
+FeaturePlot(merged_counts, "Vamp1")
+FeaturePlot(merged_counts, "Gsg1l")
+
+#From cluster 2
+FeaturePlot(merged_counts, "Necab1")
+FeaturePlot(merged_counts, "Cpne6")
+FeaturePlot(merged_counts, "Calb1")
+FeaturePlot(merged_counts, "Calb2")
+FeaturePlot(merged_counts, "6330403K07Rik")
+
+
+FeaturePlot(merged_counts, "Il1rl1")
+FeaturePlot(merged_counts, "Arhgdib")
+
+
+
+
+
+
