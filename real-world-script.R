@@ -113,8 +113,20 @@ head(cluster6.markers, 50)
 cluster7.markers <- FindMarkers(merged_counts, 7)
 head(cluster7.markers, 50)
 
-clusterL.markers <- FindMarkers(merged_counts, ident.1=c(0,1,2,3,4))
-head(clusterL.markers, 50)
+clusterL.markers <- FindMarkers(merged_counts, ident.1=c(0,1,2,3,4), ident.2=6)
+clusterL.markers
+
+cluster1.2.markers <- FindMarkers(merged_counts, ident.1=1, ident.2=2)
+cluster1.2.markers
+
+cluster0.1.markers <- FindMarkers(merged_counts, ident.1=0, ident.2=1)
+cluster0.1.markers
+
+cluster2.1.markers <- FindMarkers(merged_counts, ident.1=2, ident.2=1)
+cluster2.1.markers
+
+cluster0.2.markers <- FindMarkers(merged_counts, ident.1=0, ident.2=2)
+cluster0.2.markers
 
 #Generate feature plots for specific genes
 FeaturePlot(merged_counts, "Snap25")
@@ -137,9 +149,41 @@ FeaturePlot(merged_counts, "Calb1")
 FeaturePlot(merged_counts, "Calb2")
 FeaturePlot(merged_counts, "6330403K07Rik")
 
+#From cluster L relative to cluster 6
+FeaturePlot(merged_counts, "Ntm")
+FeaturePlot(merged_counts, "Pcp4")
+FeaturePlot(merged_counts, "Cpne7")
+FeaturePlot(merged_counts, "Col25a1")
+FeaturePlot(merged_counts, "Cbln1")
+FeaturePlot(merged_counts, "Kcnq3")
+FeaturePlot(merged_counts, "Stum")
 
-FeaturePlot(merged_counts, "Il1rl1")
-FeaturePlot(merged_counts, "Arhgdib")
+#From cluster 1 relative to cluster 2
+FeaturePlot(merged_counts, "Cplx1")
+FeaturePlot(merged_counts, "Col27a1")
+FeaturePlot(merged_counts, "Dpy19l1")
+FeaturePlot(merged_counts, "Thsd7a")
+FeaturePlot(merged_counts, "Rab37")
+FeaturePlot(merged_counts, "Patj")
+
+#From cluster 2 relative to cluster 1
+FeaturePlot(merged_counts, "Pcdh10")
+FeaturePlot(merged_counts, "Necab1")
+FeaturePlot(merged_counts, "Zcchc12")
+FeaturePlot(merged_counts, "Scn3b")
+FeaturePlot(merged_counts, "Cpne6")
+
+
+FeaturePlot(merged_counts, "Sec61a1")
+FeaturePlot(merged_counts, "Ramp3")
+
+
+
+
+
+
+ 
+
 
 
 
