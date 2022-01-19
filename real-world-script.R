@@ -76,7 +76,7 @@ merged_counts <- FindNeighbors(merged_counts, dims = 1:10)
 merged_counts <- FindClusters(merged_counts, resolution = 0.5)
 
 #See cluster IDs of first 5 cells
-head(Idents(merged_counts), 5)
+head(Idents(merged_counts), 50)
 
 #Visualize PCs after clustering
 DimPlot(merged_counts, reduction = "pca")
@@ -119,14 +119,11 @@ clusterL.markers
 cluster1.2.markers <- FindMarkers(merged_counts, ident.1=1, ident.2=2)
 cluster1.2.markers
 
-cluster0.1.markers <- FindMarkers(merged_counts, ident.1=0, ident.2=1)
-cluster0.1.markers
-
 cluster2.1.markers <- FindMarkers(merged_counts, ident.1=2, ident.2=1)
 cluster2.1.markers
 
-cluster0.2.markers <- FindMarkers(merged_counts, ident.1=0, ident.2=2)
-cluster0.2.markers
+
+#---DATA VISUALIZATION---
 
 #Generate feature plots for specific genes
 FeaturePlot(merged_counts, "Snap25")
@@ -177,16 +174,78 @@ FeaturePlot(merged_counts, "Cpne6")
 FeaturePlot(merged_counts, "Sec61a1")
 FeaturePlot(merged_counts, "Ramp3")
 
+#Data visualization for cluster 1 and cluster 2 with ggplot2
+FeaturePlot(merged_counts, c("Dpy19l1", "Necab1"), cols=c("lightgrey", "darkgreen", "purple"),  blend=TRUE) 
 
+#---GGPLOT2 SUMMARY VISUALIZATIONS---
 
+# Import ggplot library
+library("tidyverse")
 
+# Find number of cells in each cluster
+cells.cluster <- table(Idents(merged_counts))
 
+# Create subsets of cells by cluster
+merged_counts.0 <- subset(merged_counts, idents = 0)
+merged_counts.1 <- subset(merged_counts, idents = 1)
+merged_counts.2 <- subset(merged_counts, idents = 2)
+merged_counts.3 <- subset(merged_counts, idents = 3)
+merged_counts.4 <- subset(merged_counts, idents = 4)
 
- 
+# Find number of Dpy19l1 in each cluster
+Dpy19l1.cluster.1 <- sum(GetAssayData(object = merged_counts.1, slot="data")["Dpy19l1",]>0)
+Dpy19l1.cluster.3 <- sum(GetAssayData(object = merged_counts.3, slot="data")["Dpy19l1",]>0)
+Dpy19l1.cluster.0 <- sum(GetAssayData(object = merged_counts.0, slot="data")["Dpy19l1",]>0)
+Dpy19l1.cluster.4 <- sum(GetAssayData(object = merged_counts.4, slot="data")["Dpy19l1",]>0)
+Dpy19l1.cluster.2 <- sum(GetAssayData(object = merged_counts.2, slot="data")["Dpy19l1",]>0)
 
+# Calculate percentage of cells with Dpy19l1 in each cluster
+Dpy19l1.1 <- Dpy19l1.cluster.1/cells.cluster[2] * 100
+Dpy19l1.3 <- Dpy19l1.cluster.3/cells.cluster[4] * 100
+Dpy19l1.0 <- Dpy19l1.cluster.0/cells.cluster[1] * 100
+Dpy19l1.4 <- Dpy19l1.cluster.4/cells.cluster[5] * 100
+Dpy19l1.2 <- Dpy19l1.cluster.2/cells.cluster[3] * 100
 
+# Find number of Necab1 in each cluster
+Necab1.cluster.2 <- sum(GetAssayData(object = merged_counts.2, slot="data")["Necab1",]>0)
+Necab1.cluster.4 <- sum(GetAssayData(object = merged_counts.4, slot="data")["Necab1",]>0)
+Necab1.cluster.0 <- sum(GetAssayData(object = merged_counts.0, slot="data")["Necab1",]>0)
+Necab1.cluster.3 <- sum(GetAssayData(object = merged_counts.3, slot="data")["Necab1",]>0)
+Necab1.cluster.1 <- sum(GetAssayData(object = merged_counts.1, slot="data")["Necab1",]>0)
 
+# Calculate percentage of cells with Necab1 in each cluster
+Necab1.2 <- Necab1.cluster.2/cells.cluster[3] * 100
+Necab1.4 <- Necab1.cluster.4/cells.cluster[5] * 100
+Necab1.0 <- Necab1.cluster.0/cells.cluster[1] * 100
+Necab1.3 <- Necab1.cluster.3/cells.cluster[4] * 100
+Necab1.1 <- Necab1.cluster.1/cells.cluster[2] * 100
 
+# Create dataframe for ggplot
+gene_count.data <- data.frame(
+  cluster_id = c(1,3,0,4,2),
+  Dpy19l1_count = c(Dpy19l1.1, Dpy19l1.3, Dpy19l1.0, Dpy19l1.4, Dpy19l1.2),
+  Necab1_count = c(Necab1.1, Necab1.3, Necab1.0, Necab1.4, Necab1.2)
+)
+
+# Lock in dataframe order
+gene_count.data$cluster_id <- factor(gene_count.data$cluster_id, levels = gene_count.data$cluster_id)
+
+# Create ggplot
+library(forcats)
+ggplot(gene_count.data, aes(cluster_id, group = 1)) + 
+  geom_point(size = 3, aes(y = Dpy19l1_count, color = "Dpy19l1"))+
+  geom_line(size = 1, aes(y = Dpy19l1_count, color = "Dpy19l1")) +
+  geom_point(size = 3, aes(y = Necab1_count, color = "Necab1"))+
+  geom_line(size = 1, aes(y = Necab1_count, color = "Necab1")) +
+  theme_classic() +
+  ggtitle("Gene expression across endpoints of cluster \'L\'") +
+  xlab("Cluster ID") +
+  ylab("Percentage of gene expressed") +
+  labs(fill = "sd") +
+  scale_color_manual(name = "Gene Markers",
+                     labels = c("Dpy19l1", "Necab1"),
+                     values = c("purple", "darkgreen"))
+  
 
 
 
