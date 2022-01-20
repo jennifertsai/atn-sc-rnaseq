@@ -185,46 +185,26 @@ library("tidyverse")
 # Find number of cells in each cluster
 cells.cluster <- table(Idents(merged_counts))
 
-# Create subsets of cells by cluster
-merged_counts.0 <- subset(merged_counts, idents = 0)
-merged_counts.1 <- subset(merged_counts, idents = 1)
-merged_counts.2 <- subset(merged_counts, idents = 2)
-merged_counts.3 <- subset(merged_counts, idents = 3)
-merged_counts.4 <- subset(merged_counts, idents = 4)
+# Get percentage of gene in each cluster
+gene_percent_in_clusters <- function(gene_name) {
+  all_genes.percentages <- c()
+  for(i in 0:4) {
+    merged_counts.cluster <- subset(merged_counts, idents = i)
+    gene.cluster <- sum(GetAssayData(object = merged_counts.cluster, slot = "data")[gene_name,]>0)
+    gene.percent <- gene.cluster/cells.cluster[i+1] * 100
+    all_genes.percentages <- c(all_genes.percentages, gene.percent)
+  }
+  all_genes.percentages
+}
 
-# Find number of Dpy19l1 in each cluster
-Dpy19l1.cluster.1 <- sum(GetAssayData(object = merged_counts.1, slot="data")["Dpy19l1",]>0)
-Dpy19l1.cluster.3 <- sum(GetAssayData(object = merged_counts.3, slot="data")["Dpy19l1",]>0)
-Dpy19l1.cluster.0 <- sum(GetAssayData(object = merged_counts.0, slot="data")["Dpy19l1",]>0)
-Dpy19l1.cluster.4 <- sum(GetAssayData(object = merged_counts.4, slot="data")["Dpy19l1",]>0)
-Dpy19l1.cluster.2 <- sum(GetAssayData(object = merged_counts.2, slot="data")["Dpy19l1",]>0)
+Dpy19l1_percents <- gene_percent_in_clusters("Dpy19l1")
+Necab1_percents <- gene_percent_in_clusters("Necab1")
 
-# Calculate percentage of cells with Dpy19l1 in each cluster
-Dpy19l1.1 <- Dpy19l1.cluster.1/cells.cluster[2] * 100
-Dpy19l1.3 <- Dpy19l1.cluster.3/cells.cluster[4] * 100
-Dpy19l1.0 <- Dpy19l1.cluster.0/cells.cluster[1] * 100
-Dpy19l1.4 <- Dpy19l1.cluster.4/cells.cluster[5] * 100
-Dpy19l1.2 <- Dpy19l1.cluster.2/cells.cluster[3] * 100
-
-# Find number of Necab1 in each cluster
-Necab1.cluster.2 <- sum(GetAssayData(object = merged_counts.2, slot="data")["Necab1",]>0)
-Necab1.cluster.4 <- sum(GetAssayData(object = merged_counts.4, slot="data")["Necab1",]>0)
-Necab1.cluster.0 <- sum(GetAssayData(object = merged_counts.0, slot="data")["Necab1",]>0)
-Necab1.cluster.3 <- sum(GetAssayData(object = merged_counts.3, slot="data")["Necab1",]>0)
-Necab1.cluster.1 <- sum(GetAssayData(object = merged_counts.1, slot="data")["Necab1",]>0)
-
-# Calculate percentage of cells with Necab1 in each cluster
-Necab1.2 <- Necab1.cluster.2/cells.cluster[3] * 100
-Necab1.4 <- Necab1.cluster.4/cells.cluster[5] * 100
-Necab1.0 <- Necab1.cluster.0/cells.cluster[1] * 100
-Necab1.3 <- Necab1.cluster.3/cells.cluster[4] * 100
-Necab1.1 <- Necab1.cluster.1/cells.cluster[2] * 100
-
-# Create dataframe for ggplot
+# Create dataframe for 'specific-gene' ggplot
 gene_count.data <- data.frame(
   cluster_id = c(1,3,0,4,2),
-  Dpy19l1_count = c(Dpy19l1.1, Dpy19l1.3, Dpy19l1.0, Dpy19l1.4, Dpy19l1.2),
-  Necab1_count = c(Necab1.1, Necab1.3, Necab1.0, Necab1.4, Necab1.2)
+  Dpy19l1_count = Dpy19l1_percents[c(2,4,1,5,3)], 
+  Necab1_count = Necab1_percents[c(2,4,1,5,3)]
 )
 
 # Lock in dataframe order
@@ -248,4 +228,5 @@ ggplot(gene_count.data, aes(cluster_id, group = 1)) +
   
 
 
+Embeddings(object = merged_counts[["umap"]])
 
