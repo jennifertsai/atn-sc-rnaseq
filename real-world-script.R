@@ -197,8 +197,38 @@ gene_percent_in_clusters <- function(gene_name) {
   all_genes.percentages
 }
 
+# Cluster 1
 Dpy19l1_percents <- gene_percent_in_clusters("Dpy19l1")
+Col27a1_percents <- gene_percent_in_clusters("Col27a1")
+Rab37_percents <- gene_percent_in_clusters("Rab37")
+Car4_percents <- gene_percent_in_clusters("Car4")
+Eps8l2_percents <- gene_percent_in_clusters("Eps8l2")
+Rgs6_percents <- gene_percent_in_clusters("Rgs6")
+
+# Cluster 2
 Necab1_percents <- gene_percent_in_clusters("Necab1")
+Pcdh10_percents <- gene_percent_in_clusters("Pcdh10")
+Zcchc12_percents <- gene_percent_in_clusters("Zcchc12")
+Cpne6_percents <- gene_percent_in_clusters("Cpne6")
+Scn3b_percents <- gene_percent_in_clusters("Scn3b")
+Calb1_percents <- gene_percent_in_clusters("Calb1")
+
+percents_list <- t(matrix(
+  c(Dpy19l1_percents,
+  Col27a1_percents,
+  Rab37_percents,
+  Car4_percents,
+  Eps8l2_percents,
+  Rgs6_percents,
+  Necab1_percents,
+  Pcdh10_percents,
+  Zcchc12_percents,
+  Cpne6_percents,
+  Scn3b_percents,
+  Calb1_percents),
+  nrow = 5,
+  ncol = 12
+))
 
 # Create dataframe for 'specific-gene' ggplot
 gene_count.data <- data.frame(
@@ -226,7 +256,27 @@ ggplot(gene_count.data, aes(cluster_id, group = 1)) +
                      labels = c("Dpy19l1", "Necab1"),
                      values = c("purple", "darkgreen"))
   
+# Create dataframe for 'all-gene' ggplot
+gene_names <- c("Dpy19l1", "Col27a1", "Rab37", "Car4", "Eps8l2", "Rgs12",
+                "Necab1", "Pcdh10", "Zcchc12", "Cpne6", "Scn3b", "Calb1")
+cluster_order <- c(1,3,0,4,2)
 
+genes.percentages <- data.frame()
+for(i in cluster_order) {
+  for(j in gene_names) {
+    if(which(gene_names==j) >= 1 && which(gene_names==j) <= 6) {
+      cluster_id <- 1
+    }
+    else {
+      cluster_id <- 2
+    }
+    genes.percentages <- rbind(genes.percentages, 
+                               data.frame(gene = j, 
+                                          cluster = i,
+                                          id = cluster_id,
+                                          percent_gene = percents_list[which(gene_names==j), i+1] 
+                                          ))
+  }
+}
 
-Embeddings(object = merged_counts[["umap"]])
 
