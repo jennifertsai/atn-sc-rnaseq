@@ -4,40 +4,55 @@ library(Seurat)
 library(patchwork)
 
 #Load data set
-merged_counts.data <- read.table('data/merged_counts.txt',sep='\t',header=T)
+merged_counts.data <-
+  read.table('data/merged_counts.txt', sep = '\t', header = T)
 
 #Delete entries with ERCC
-merged_counts.data <- merged_counts.data[!grepl("ERCC-", merged_counts.data$gene_name),]
+merged_counts.data <-
+  merged_counts.data[!grepl("ERCC-", merged_counts.data$gene_name), ]
 
 
 #Delete entries of duplicate gene_name
-merged_counts.data <- merged_counts.data[!duplicated(merged_counts.data$gene_name),]
+merged_counts.data <-
+  merged_counts.data[!duplicated(merged_counts.data$gene_name), ]
 
 #Let gene_name column = row.names
-row.names(merged_counts.data) <- merged_counts.data[,2]
+row.names(merged_counts.data) <- merged_counts.data[, 2]
 
 #Delete gene_id and gene_name columns
 merged_counts.data = subset(merged_counts.data, select = -c(gene_id, gene_name))
 
 #Create Seurat object with raw data
-merged_counts <- CreateSeuratObject(counts = merged_counts.data, min.cells = 3, min.features = 200)
+merged_counts <-
+  CreateSeuratObject(counts = merged_counts.data,
+                     min.cells = 3,
+                     min.features = 200)
 
 #---PRE-PROCESSING---
 
 #Create new column to store QC stats, using set of genes starting with "mt"
-merged_counts[["percent.mt"]] <- PercentageFeatureSet(merged_counts, pattern = "^mt-")
+merged_counts[["percent.mt"]] <-
+  PercentageFeatureSet(merged_counts, pattern = "^mt-")
 
 head(merged_counts@meta.data, 10)
 
 #Visualize QC metrics
-violin_plot <- VlnPlot(merged_counts, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
-feature_plot_1 <- FeatureScatter(merged_counts, feature1 = "nCount_RNA", feature2 = "percent.mt")
-feature_plot_2 <- FeatureScatter(merged_counts, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
+violin_plot <-
+  VlnPlot(
+    merged_counts,
+    features = c("nFeature_RNA", "nCount_RNA", "percent.mt"),
+    ncol = 3
+  )
+feature_plot_1 <-
+  FeatureScatter(merged_counts, feature1 = "nCount_RNA", feature2 = "percent.mt")
+feature_plot_2 <-
+  FeatureScatter(merged_counts, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
 
 violin_plot + feature_plot_1 + feature_plot_2
 
 #Filter data set
-merged_counts <- subset(merged_counts, subset = nFeature_RNA > 200 & percent.mt < 5)
+merged_counts <-
+  subset(merged_counts, subset = nFeature_RNA > 200 & percent.mt < 5)
 
 #---DATA NORMALIZATION---
 
@@ -45,14 +60,20 @@ merged_counts <- subset(merged_counts, subset = nFeature_RNA > 200 & percent.mt 
 merged_counts <- NormalizeData(merged_counts)
 
 #---FEATURE SELECTION---
-merged_counts <- FindVariableFeatures(merged_counts, selection.method = "vst", nfeature = 2000)
+merged_counts <-
+  FindVariableFeatures(merged_counts,
+                       selection.method = "vst",
+                       nfeature = 2000)
 
 #Get top 10 most highly variable genes
 top10 <- head(VariableFeatures(merged_counts), 10)
 
 #Visualize variable features
 variable_features_plot_1 <- VariableFeaturePlot(merged_counts)
-variable_features_plot_2 <- LabelPoints(plot = variable_features_plot_1, points = top10, repel = TRUE)
+variable_features_plot_2 <-
+  LabelPoints(plot = variable_features_plot_1,
+              points = top10,
+              repel = TRUE)
 variable_features_plot_1 + variable_features_plot_2
 
 #---DATA SCALING---
@@ -60,7 +81,8 @@ all.genes <- rownames(merged_counts)
 merged_counts <- ScaleData(merged_counts, features = all.genes)
 
 #---LINEAR DIM REDUCTION---
-merged_counts <- RunPCA(merged_counts, features = VariableFeatures(object = merged_counts))
+merged_counts <-
+  RunPCA(merged_counts, features = VariableFeatures(object = merged_counts))
 print(merged_counts[["pca"]], dims = 1:5, nfeatures = 5)
 
 #Visualize PCs
@@ -86,7 +108,7 @@ merged_counts <- RunUMAP(merged_counts, dims = 1:10)
 
 DimPlot(merged_counts, reduction = "umap", label = TRUE) + NoLegend()
 
-#---CLUSTER BIOMARKERS--- 
+#---CLUSTER BIOMARKERS---
 
 #Get top 50 marker genes in each cluster
 cluster0.markers <- FindMarkers(merged_counts, 0)
@@ -113,13 +135,18 @@ head(cluster6.markers, 50)
 cluster7.markers <- FindMarkers(merged_counts, 7)
 head(cluster7.markers, 50)
 
-clusterL.markers <- FindMarkers(merged_counts, ident.1=c(0,1,2,3,4), ident.2=6)
+clusterL.markers <-
+  FindMarkers(merged_counts,
+              ident.1 = c(0, 1, 2, 3, 4),
+              ident.2 = 6)
 clusterL.markers
 
-cluster1.2.markers <- FindMarkers(merged_counts, ident.1=1, ident.2=2)
+cluster1.2.markers <-
+  FindMarkers(merged_counts, ident.1 = 1, ident.2 = 2)
 cluster1.2.markers
 
-cluster2.1.markers <- FindMarkers(merged_counts, ident.1=2, ident.2=1)
+cluster2.1.markers <-
+  FindMarkers(merged_counts, ident.1 = 2, ident.2 = 1)
 cluster2.1.markers
 
 
@@ -175,7 +202,12 @@ FeaturePlot(merged_counts, "Sec61a1")
 FeaturePlot(merged_counts, "Ramp3")
 
 #Data visualization for cluster 1 and cluster 2 with ggplot2
-FeaturePlot(merged_counts, c("Dpy19l1", "Necab1"), cols=c("lightgrey", "darkgreen", "purple"),  blend=TRUE) 
+FeaturePlot(
+  merged_counts,
+  c("Dpy19l1", "Necab1"),
+  cols = c("lightgrey", "darkgreen", "purple"),
+  blend = TRUE
+)
 
 #---GGPLOT2 SUMMARY VISUALIZATIONS---
 
@@ -188,10 +220,12 @@ cells.cluster <- table(Idents(merged_counts))
 # Get percentage of gene in each cluster
 gene_percent_in_clusters <- function(gene_name) {
   all_genes.percentages <- c()
-  for(i in 0:4) {
+  for (i in 0:4) {
     merged_counts.cluster <- subset(merged_counts, idents = i)
-    gene.cluster <- sum(GetAssayData(object = merged_counts.cluster, slot = "data")[gene_name,]>0)
-    gene.percent <- gene.cluster/cells.cluster[i+1] * 100
+    gene.cluster <-
+      sum(GetAssayData(object = merged_counts.cluster, slot = "data")[gene_name, ] >
+            0)
+    gene.percent <- gene.cluster / cells.cluster[i + 1] * 100
     all_genes.percentages <- c(all_genes.percentages, gene.percent)
   }
   all_genes.percentages
@@ -214,69 +248,105 @@ Scn3b_percents <- gene_percent_in_clusters("Scn3b")
 Calb1_percents <- gene_percent_in_clusters("Calb1")
 
 percents_list <- t(matrix(
-  c(Dpy19l1_percents,
-  Col27a1_percents,
-  Rab37_percents,
-  Car4_percents,
-  Eps8l2_percents,
-  Rgs6_percents,
-  Necab1_percents,
-  Pcdh10_percents,
-  Zcchc12_percents,
-  Cpne6_percents,
-  Scn3b_percents,
-  Calb1_percents),
+  c(
+    Dpy19l1_percents,
+    Col27a1_percents,
+    Rab37_percents,
+    Car4_percents,
+    Eps8l2_percents,
+    Rgs6_percents,
+    Necab1_percents,
+    Pcdh10_percents,
+    Zcchc12_percents,
+    Cpne6_percents,
+    Scn3b_percents,
+    Calb1_percents
+  ),
   nrow = 5,
   ncol = 12
 ))
 
 # Create dataframe for 'specific-gene' ggplot
 gene_count.data <- data.frame(
-  cluster_id = c(1,3,0,4,2),
-  Dpy19l1_count = Dpy19l1_percents[c(2,4,1,5,3)], 
-  Necab1_count = Necab1_percents[c(2,4,1,5,3)]
+  cluster_id = c(1, 3, 0, 4, 2),
+  Dpy19l1_count = Dpy19l1_percents[c(2, 4, 1, 5, 3)],
+  Necab1_count = Necab1_percents[c(2, 4, 1, 5, 3)]
 )
 
 # Lock in dataframe order
-gene_count.data$cluster_id <- factor(gene_count.data$cluster_id, levels = gene_count.data$cluster_id)
+gene_count.data$cluster_id <-
+  factor(gene_count.data$cluster_id, levels = gene_count.data$cluster_id)
 
 # Create ggplot
 library(forcats)
-ggplot(gene_count.data, aes(cluster_id, group = 1)) + 
-  geom_point(size = 3, aes(y = Dpy19l1_count, color = "Dpy19l1"))+
+ggplot(gene_count.data, aes(cluster_id, group = 1)) +
+  geom_point(size = 3, aes(y = Dpy19l1_count, color = "Dpy19l1")) +
   geom_line(size = 1, aes(y = Dpy19l1_count, color = "Dpy19l1")) +
-  geom_point(size = 3, aes(y = Necab1_count, color = "Necab1"))+
+  geom_point(size = 3, aes(y = Necab1_count, color = "Necab1")) +
   geom_line(size = 1, aes(y = Necab1_count, color = "Necab1")) +
   theme_classic() +
   ggtitle("Gene expression across endpoints of cluster \'L\'") +
   xlab("Cluster ID") +
   ylab("Percentage of gene expressed") +
   labs(fill = "sd") +
-  scale_color_manual(name = "Gene Markers",
-                     labels = c("Dpy19l1", "Necab1"),
-                     values = c("purple", "darkgreen"))
-  
+  scale_color_manual(
+    name = "Gene Markers",
+    labels = c("Dpy19l1", "Necab1"),
+    values = c("purple", "darkgreen")
+  )
+
 # Create dataframe for 'all-gene' ggplot
-gene_names <- c("Dpy19l1", "Col27a1", "Rab37", "Car4", "Eps8l2", "Rgs12",
-                "Necab1", "Pcdh10", "Zcchc12", "Cpne6", "Scn3b", "Calb1")
-cluster_order <- c(1,3,0,4,2)
+gene_names <-
+  c(
+    "Dpy19l1",
+    "Col27a1",
+    "Rab37",
+    "Car4",
+    "Eps8l2",
+    "Rgs12",
+    "Necab1",
+    "Pcdh10",
+    "Zcchc12",
+    "Cpne6",
+    "Scn3b",
+    "Calb1"
+  )
+cluster_order <- c(1, 3, 0, 4, 2)
 
 genes.percentages <- data.frame()
-for(i in cluster_order) {
-  for(j in gene_names) {
-    if(which(gene_names==j) >= 1 && which(gene_names==j) <= 6) {
+for (i in cluster_order) {
+  for (j in gene_names) {
+    if (which(gene_names == j) >= 1 && which(gene_names == j) <= 6) {
       cluster_id <- 1
     }
     else {
       cluster_id <- 2
     }
-    genes.percentages <- rbind(genes.percentages, 
-                               data.frame(gene = j, 
-                                          cluster = i,
-                                          id = cluster_id,
-                                          percent_gene = percents_list[which(gene_names==j), i+1] 
-                                          ))
+    genes.percentages <- rbind(
+      genes.percentages,
+      data.frame(
+        gene = j,
+        cluster = i,
+        id = cluster_id,
+        percent_gene = percents_list[which(gene_names == j), i + 1]
+      )
+    )
   }
 }
 
+cluster1.data <- subset(genes.percentages, id == 1)
+cluster2.data <- subset(genes.percentages, id == 2)
 
+cluster1.plot <-
+  (ggplot(data = cluster1.data, aes(x = cluster, y = percent_gene)) 
+   + geom_boxplot() 
+   + aes(x = fct_inorder(cluster)) 
+   + geom_dotplot(binaxis = 'y',dotsize = 0.5, stackdir = 'center'))
+
+cluster2.plot <-
+  (ggplot(data = cluster2.data, aes(x = cluster, y = percent_gene)) 
+   + geom_boxplot() 
+   + aes(x = fct_inorder(cluster)) 
+   + geom_dotplot(binaxis = 'y', dotsize = 0.5, stackdir = 'center'))
+
+cluster1.plot + cluster2.plot
