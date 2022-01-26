@@ -52,7 +52,8 @@ violin_plot + feature_plot_1 + feature_plot_2
 
 #Filter data set
 merged_counts <-
-  subset(merged_counts, subset = nFeature_RNA > 200 & percent.mt < 5)
+  subset(merged_counts, subset = nFeature_RNA > 200 &
+           percent.mt < 5)
 
 #---DATA NORMALIZATION---
 
@@ -106,7 +107,8 @@ DimPlot(merged_counts, reduction = "pca")
 #---NONLINEAR DIM REDUCTION---
 merged_counts <- RunUMAP(merged_counts, dims = 1:10)
 
-DimPlot(merged_counts, reduction = "umap", label = TRUE) + NoLegend()
+umap.plot <-
+  DimPlot(merged_counts, reduction = "umap", label = TRUE) + NoLegend()
 
 #---CLUSTER BIOMARKERS---
 
@@ -337,16 +339,79 @@ for (i in cluster_order) {
 cluster1.data <- subset(genes.percentages, id == 1)
 cluster2.data <- subset(genes.percentages, id == 2)
 
+cluster1.data$cluster <- as.factor(cluster1.data$cluster)
+cluster2.data$cluster <- as.factor(cluster2.data$cluster)
+
 cluster1.plot <-
-  (ggplot(data = cluster1.data, aes(x = cluster, y = percent_gene)) 
-   + geom_boxplot() 
-   + aes(x = fct_inorder(cluster)) 
-   + geom_dotplot(binaxis = 'y',dotsize = 0.5, stackdir = 'center'))
+  (
+    ggplot(data = cluster1.data, aes(
+      x = fct_inorder(cluster),
+      y = percent_gene,
+    ))
+    + geom_boxplot()
+    + geom_dotplot(
+      binaxis = 'y',
+      dotsize = 0.5,
+      stackdir = 'center'
+    )
+    + geom_line(aes(group = gene))
+    + ggtitle("Cluster 1 gene markers across endpoints of cluster \'L\'") 
+    + xlab("Cluster ID") 
+    + ylab("Percentage of gene expressed") 
+    
+  )
 
 cluster2.plot <-
-  (ggplot(data = cluster2.data, aes(x = cluster, y = percent_gene)) 
-   + geom_boxplot() 
-   + aes(x = fct_inorder(cluster)) 
-   + geom_dotplot(binaxis = 'y', dotsize = 0.5, stackdir = 'center'))
+  (
+    ggplot(data = cluster2.data, aes(
+      x = fct_inorder(cluster),
+      y = percent_gene
+    ))
+    + geom_boxplot()
+    + geom_dotplot(
+      binaxis = 'y',
+      dotsize = 0.5,
+      stackdir = 'center'
+    )
+    + geom_line(aes(group = gene))
+    + ggtitle("Cluster 2 gene markers across endpoints of cluster \'L\'") 
+    + xlab("Cluster ID") 
+    + ylab("Percentage of gene expressed") 
+  )
 
 cluster1.plot + cluster2.plot
+
+#--- CONTINUUM PLOT ---
+
+# Interactive UMAP
+HoverLocator(plot = umap.plot,
+             information = FetchData(
+               merged_counts,
+               vars = c("ident", "UMAP_1", "UMAP_2", "PC_1", "PC_2", "nFeature_RNA")
+             ))
+
+# Pick Q8_C08_Plate_502_Q8 and Q7_A09_Plate_503_Q7 coordinates as arbitrary seed values
+coord_start <- c(-7.756,-0.694)
+coord_end <- c(1.583, 7.709)
+coord_table <- rbind(coord_start, coord_end)
+dist(coord_table, "manhattan")
+
+# Dataframe with only cells from cluster L
+clusterL.data <-
+  subset(merged_counts, seurat_clusters == 0 | 1 | 2 | 3 | 4)
+clusterL_coords <- clusterL.data[["umap"]]@cell.embeddings
+
+# Get Manhattan distance from starting coordinate to each cell using a continuum scale
+cell_distances <- c()
+for(row in 1:nrow(clusterL_coords)) {
+  coord_cell <- c(clusterL_coords[row, 1], clusterL_coords[row, 2])
+  start_to_cell <- rbind(coord_start, coord_cell)
+  cell_distances <- c(cell_distances, start_to_cell)
+}
+
+cbind(clusterL_coords, cell_distances)
+
+
+#umap.plot.output_notebook()
+
+#merged_counts[["umap"]]@cell.embeddings
