@@ -344,39 +344,36 @@ cluster2.data$cluster <- as.factor(cluster2.data$cluster)
 
 cluster1.plot <-
   (
-    ggplot(data = cluster1.data, aes(
-      x = fct_inorder(cluster),
-      y = percent_gene,
-    ))
+    ggplot(data = cluster1.data, aes(x = fct_inorder(cluster),
+                                     y = percent_gene, ))
     + geom_boxplot()
     + geom_dotplot(
       binaxis = 'y',
       dotsize = 0.5,
       stackdir = 'center'
     )
-    + geom_line(aes(group = gene))
-    + ggtitle("Cluster 1 gene markers across endpoints of cluster \'L\'") 
-    + xlab("Cluster ID") 
-    + ylab("Percentage of gene expressed") 
-    
+    + geom_line(aes(group = gene, color = gene), size = 1)
+    + ggtitle("Cluster 1 gene markers across endpoints of cluster \'L\'")
+    + xlab("Cluster ID")
+    + ylab("Percentage of gene expressed")
+    + theme_classic()
   )
 
 cluster2.plot <-
   (
-    ggplot(data = cluster2.data, aes(
-      x = fct_inorder(cluster),
-      y = percent_gene
-    ))
+    ggplot(data = cluster2.data, aes(x = fct_inorder(cluster),
+                                     y = percent_gene))
     + geom_boxplot()
     + geom_dotplot(
       binaxis = 'y',
       dotsize = 0.5,
       stackdir = 'center'
     )
-    + geom_line(aes(group = gene))
-    + ggtitle("Cluster 2 gene markers across endpoints of cluster \'L\'") 
-    + xlab("Cluster ID") 
-    + ylab("Percentage of gene expressed") 
+    + geom_line(aes(group = gene, color = gene), size = 1)
+    + ggtitle("Cluster 2 gene markers across endpoints of cluster \'L\'")
+    + xlab("Cluster ID")
+    + ylab("Percentage of gene expressed")
+    + theme_classic()
   )
 
 cluster1.plot + cluster2.plot
@@ -403,7 +400,7 @@ clusterL_coords <- clusterL.data[["umap"]]@cell.embeddings
 
 # Get Manhattan distance from starting coordinate to each cell using a continuum scale
 cell_distances <- c()
-for(row in 1:nrow(clusterL_coords)) {
+for (row in 1:nrow(clusterL_coords)) {
   coord_cell <- c(clusterL_coords[row, 1], clusterL_coords[row, 2])
   start_to_cell <- rbind(coord_start, coord_cell)
   cell_distances <- c(cell_distances, start_to_cell)
