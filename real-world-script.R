@@ -7,6 +7,8 @@ library(patchwork)
 merged_counts.data <-
   read.table('data/merged_counts.txt', sep = '\t', header = T)
 
+#---DATA PRE-PROCESSING---
+
 #Delete entries with ERCC
 merged_counts.data <-
   merged_counts.data[!grepl("ERCC-", merged_counts.data$gene_name), ]
@@ -27,8 +29,6 @@ merged_counts <-
   CreateSeuratObject(counts = merged_counts.data,
                      min.cells = 3,
                      min.features = 200)
-
-#---PRE-PROCESSING---
 
 #Create new column to store QC stats, using set of genes starting with "mt"
 merged_counts[["percent.mt"]] <-
@@ -137,12 +137,14 @@ head(cluster6.markers, 50)
 cluster7.markers <- FindMarkers(merged_counts, 7)
 head(cluster7.markers, 50)
 
+#Gene markers for L shaped clump in UMAP
 clusterL.markers <-
   FindMarkers(merged_counts,
               ident.1 = c(0, 1, 2, 3, 4),
               ident.2 = 6)
 clusterL.markers
 
+#Gene markers of clusters relative to each another cluster
 cluster1.2.markers <-
   FindMarkers(merged_counts, ident.1 = 1, ident.2 = 2)
 cluster1.2.markers
@@ -213,13 +215,13 @@ FeaturePlot(
 
 #---GGPLOT2 SUMMARY VISUALIZATIONS---
 
-# Import ggplot library
+#Import ggplot library
 library("tidyverse")
 
-# Find number of cells in each cluster
+#Find number of cells in each cluster
 cells.cluster <- table(Idents(merged_counts))
 
-# Get percentage of gene in each cluster
+#Get percentage of gene in each cluster
 gene_percent_in_clusters <- function(gene_name) {
   all_genes.percentages <- c()
   for (i in 0:4) {
@@ -233,7 +235,7 @@ gene_percent_in_clusters <- function(gene_name) {
   all_genes.percentages
 }
 
-# Cluster 1
+#Percent of cluster 1 gene markers 
 Dpy19l1_percents <- gene_percent_in_clusters("Dpy19l1")
 Col27a1_percents <- gene_percent_in_clusters("Col27a1")
 Rab37_percents <- gene_percent_in_clusters("Rab37")
@@ -241,7 +243,7 @@ Car4_percents <- gene_percent_in_clusters("Car4")
 Eps8l2_percents <- gene_percent_in_clusters("Eps8l2")
 Rgs6_percents <- gene_percent_in_clusters("Rgs6")
 
-# Cluster 2
+#Percent of cluster 2 gene markers
 Necab1_percents <- gene_percent_in_clusters("Necab1")
 Pcdh10_percents <- gene_percent_in_clusters("Pcdh10")
 Zcchc12_percents <- gene_percent_in_clusters("Zcchc12")
@@ -249,6 +251,7 @@ Cpne6_percents <- gene_percent_in_clusters("Cpne6")
 Scn3b_percents <- gene_percent_in_clusters("Scn3b")
 Calb1_percents <- gene_percent_in_clusters("Calb1")
 
+#Create matrix of percents of all gene markers
 percents_list <- t(matrix(
   c(
     Dpy19l1_percents,
@@ -268,18 +271,18 @@ percents_list <- t(matrix(
   ncol = 12
 ))
 
-# Create dataframe for 'specific-gene' ggplot
+#Create dataframe for 'specific-gene' ggplot
 gene_count.data <- data.frame(
   cluster_id = c(1, 3, 0, 4, 2),
   Dpy19l1_count = Dpy19l1_percents[c(2, 4, 1, 5, 3)],
   Necab1_count = Necab1_percents[c(2, 4, 1, 5, 3)]
 )
 
-# Lock in dataframe order
+#Lock in dataframe order
 gene_count.data$cluster_id <-
   factor(gene_count.data$cluster_id, levels = gene_count.data$cluster_id)
 
-# Create ggplot
+#Create ggplot
 library(forcats)
 ggplot(gene_count.data, aes(cluster_id, group = 1)) +
   geom_point(size = 3, aes(y = Dpy19l1_count, color = "Dpy19l1")) +
@@ -297,7 +300,7 @@ ggplot(gene_count.data, aes(cluster_id, group = 1)) +
     values = c("purple", "darkgreen")
   )
 
-# Create dataframe for 'all-gene' ggplot
+#Create dataframe for 'all-gene' ggplot
 gene_names <-
   c(
     "Dpy19l1",
@@ -315,6 +318,7 @@ gene_names <-
   )
 cluster_order <- c(1, 3, 0, 4, 2)
 
+#Create dataframe for all-gene box plot
 genes.percentages <- data.frame()
 for (i in cluster_order) {
   for (j in gene_names) {
@@ -336,12 +340,14 @@ for (i in cluster_order) {
   }
 }
 
+#Separate cluster 1 and cluster 2 data 
 cluster1.data <- subset(genes.percentages, id == 1)
 cluster2.data <- subset(genes.percentages, id == 2)
 
 cluster1.data$cluster <- as.factor(cluster1.data$cluster)
 cluster2.data$cluster <- as.factor(cluster2.data$cluster)
 
+#Create all-gene box plot for cluster 1
 cluster1.plot <-
   (
     ggplot(data = cluster1.data, aes(x = fct_inorder(cluster),
@@ -359,6 +365,7 @@ cluster1.plot <-
     + theme_classic()
   )
 
+#Create all-gene box plot for cluster 2
 cluster2.plot <-
   (
     ggplot(data = cluster2.data, aes(x = fct_inorder(cluster),
@@ -380,35 +387,59 @@ cluster1.plot + cluster2.plot
 
 #--- CONTINUUM PLOT ---
 
-# Interactive UMAP
+#Generate interactive UMAP
 HoverLocator(plot = umap.plot,
              information = FetchData(
                merged_counts,
                vars = c("ident", "UMAP_1", "UMAP_2", "PC_1", "PC_2", "nFeature_RNA")
              ))
 
-# Pick Q8_C08_Plate_502_Q8 and Q7_A09_Plate_503_Q7 coordinates as arbitrary seed values
+#Pick Q8_C08_Plate_502_Q8 and Q7_A09_Plate_503_Q7 coordinates as arbitrary seed values
 coord_start <- c(-7.756,-0.694)
 coord_end <- c(1.583, 7.709)
 coord_table <- rbind(coord_start, coord_end)
-dist(coord_table, "manhattan")
+continuum <- dist(coord_table, "manhattan")
 
-# Dataframe with only cells from cluster L
+#Create dataframe with only cells from cluster L
 clusterL.data <-
-  subset(merged_counts, seurat_clusters == 0 | 1 | 2 | 3 | 4)
+  subset(
+    merged_counts,
+    seurat_clusters == 0 |
+    seurat_clusters == 1 |
+    seurat_clusters == 2 |
+    seurat_clusters == 3 |
+    seurat_clusters == 4
+  )
 clusterL_coords <- clusterL.data[["umap"]]@cell.embeddings
 
-# Get Manhattan distance from starting coordinate to each cell using a continuum scale
+#Get Manhattan distance from starting coordinate to each cell 
 cell_distances <- c()
+normalized_distances <- c()
 for (row in 1:nrow(clusterL_coords)) {
   coord_cell <- c(clusterL_coords[row, 1], clusterL_coords[row, 2])
-  start_to_cell <- rbind(coord_start, coord_cell)
+  coords <- rbind(coord_start, coord_cell)
+  start_to_cell <- dist(coords, "manhattan")
   cell_distances <- c(cell_distances, start_to_cell)
+  
+  #Normalized distances with continuum scale 
+  if (start_to_cell > continuum) {
+    normalized_distance <- 1
+  }
+  else {
+    normalized_distance <- start_to_cell / continuum
+  }
+  normalized_distances <-
+    c(normalized_distances, normalized_distance)
 }
 
-cbind(clusterL_coords, cell_distances)
+#Add distances to dataframe
+clusterL_coords <- cbind(clusterL_coords, cell_distances)
+clusterL_coords <- cbind(clusterL_coords, normalized_distances)
+
+
+
+
 
 
 #umap.plot.output_notebook()
-
 #merged_counts[["umap"]]@cell.embeddings
