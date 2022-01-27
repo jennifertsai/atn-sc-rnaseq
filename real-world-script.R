@@ -169,7 +169,7 @@ cluster2.1.markers
 
 
 #DATA VIZ#####################################################################
-
+FeaturePlot(merged_counts, "Dab1")
 
 #Generate feature plots for specific genes
 FeaturePlot(merged_counts, "Snap25")
@@ -184,6 +184,22 @@ FeaturePlot(merged_counts, "Eps8l2")
 FeaturePlot(merged_counts, "Rgs6")
 FeaturePlot(merged_counts, "Vamp1")
 FeaturePlot(merged_counts, "Gsg1l")
+
+FeaturePlot(merged_counts,
+            c("Dpy19l1",
+              "Col27a1",
+              "Rab37",
+              "Car4",
+              "Eps8l2",
+              "Rgs6"))
+FeaturePlot(merged_counts,
+            c("Necab1",
+              "Pcdh10",
+              "Zcchc12",
+              "Cpne6",
+              "Scn3b",
+              "Calb1"))
+
 
 #From cluster 2
 FeaturePlot(merged_counts, "Necab1")
@@ -320,7 +336,7 @@ gene_names <-
     "Rab37",
     "Car4",
     "Eps8l2",
-    "Rgs12",
+    "Rgs6",
     "Necab1",
     "Pcdh10",
     "Zcchc12",
@@ -371,9 +387,9 @@ cluster1.plot <-
       stackdir = 'center'
     )
     + geom_line(aes(group = gene, color = gene), size = 1)
-    + ggtitle("Cluster 1 gene markers across endpoints of cluster \'L\'")
+    + ggtitle("Top 6 cluster 1 gene markers across endpoints of cluster \'L\'")
     + xlab("Cluster ID")
-    + ylab("Percentage of gene expressed")
+    + ylab("% of gene expressed")
     + theme_classic()
   )
 
@@ -389,9 +405,9 @@ cluster2.plot <-
       stackdir = 'center'
     )
     + geom_line(aes(group = gene, color = gene), size = 1)
-    + ggtitle("Cluster 2 gene markers across endpoints of cluster \'L\'")
+    + ggtitle("Top 6 cluster 2 gene markers across endpoints of cluster \'L\'")
     + xlab("Cluster ID")
-    + ylab("Percentage of gene expressed")
+    + ylab("% of gene expressed")
     + theme_classic()
   )
 
@@ -425,7 +441,6 @@ clusterL.data <-
 clusterL_coords <- clusterL.data[["umap"]]@cell.embeddings
 
 #Calculate gene expression percentages of each cell
-
 #Cluster 1
 percent.avg1 <-
   (
@@ -434,7 +449,7 @@ percent.avg1 <-
       PercentageFeatureSet(clusterL.data, pattern = "Dpy19l1") +
       PercentageFeatureSet(clusterL.data, pattern = "Eps8l2") +
       PercentageFeatureSet(clusterL.data, pattern = "Rab37") +
-      PercentageFeatureSet(clusterL.data, pattern = "Rgs12")
+      PercentageFeatureSet(clusterL.data, pattern = "Rgs6")
   ) / 6
 
 #Cluster 2
@@ -481,8 +496,26 @@ continuum.data2$nCount_RNA <- unlist(continuum.data2$nCount_RNA)
 continuum.data2$normalized_distances <-
   unlist(continuum.data2$normalized_distances)
 
-(ggplot(data = continuum.data1, aes(x = normalized_distances, y = nCount_RNA))
-  + geom_point())
+#Create continuum plots
+continuum.plot1 <-
+  (
+    ggplot(data = continuum.data1, aes(x = normalized_distances, y = nCount_RNA))
+    + geom_point()
+    + theme_classic()
+    + ggtitle("Average cluster 1 gene expressions across cluster \'L\' cells")
+    + xlab("Distance along continuum")
+    + ylab("% of top 6 gene markers expressed")
+    
+  )
 
-(ggplot(data = continuum.data2, aes(x = normalized_distances, y = nCount_RNA))
-  + geom_point())
+continuum.plot2 <-
+  (
+    ggplot(data = continuum.data2, aes(x = normalized_distances, y = nCount_RNA))
+    + geom_point()
+    + theme_classic()
+    + ggtitle("Average cluster 2 gene expressions across cluster \'L\' cells")
+    + xlab("Distance along continuum")
+    + ylab("% of top 6 gene markers expressed")
+  )
+
+continuum.plot1 + continuum.plot2
