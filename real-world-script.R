@@ -1,22 +1,30 @@
-#Set up Seurat object
+##############################################################################
+# Jennifer Tsai
+# sc-RNA-seq Analysis of anterior thalamic nuclei
+# January-April 2022
+##############################################################################
+
 library(dplyr)
 library(Seurat)
 library(patchwork)
+library(tidyverse) #ggplot library
+
+##############################################################################
 
 #Load data set
 merged_counts.data <-
   read.table('data/merged_counts.txt', sep = '\t', header = T)
 
-#---DATA PRE-PROCESSING---
+#DATA-PREPROCESSING###########################################################
 
 #Delete entries with ERCC
 merged_counts.data <-
-  merged_counts.data[!grepl("ERCC-", merged_counts.data$gene_name), ]
+  merged_counts.data[!grepl("ERCC-", merged_counts.data$gene_name),]
 
 
 #Delete entries of duplicate gene_name
 merged_counts.data <-
-  merged_counts.data[!duplicated(merged_counts.data$gene_name), ]
+  merged_counts.data[!duplicated(merged_counts.data$gene_name),]
 
 #Let gene_name column = row.names
 row.names(merged_counts.data) <- merged_counts.data[, 2]
@@ -55,12 +63,14 @@ merged_counts <-
   subset(merged_counts, subset = nFeature_RNA > 200 &
            percent.mt < 5)
 
-#---DATA NORMALIZATION---
+#DATA NORMALIZATION###########################################################
 
 #Normalize feature expression measurements for each cell
 merged_counts <- NormalizeData(merged_counts)
+#normalize with SCT
 
-#---FEATURE SELECTION---
+#FEATURE SELECTION############################################################
+
 merged_counts <-
   FindVariableFeatures(merged_counts,
                        selection.method = "vst",
@@ -77,11 +87,13 @@ variable_features_plot_2 <-
               repel = TRUE)
 variable_features_plot_1 + variable_features_plot_2
 
-#---DATA SCALING---
+#DATA SCALING#################################################################
+
 all.genes <- rownames(merged_counts)
 merged_counts <- ScaleData(merged_counts, features = all.genes)
 
-#---LINEAR DIM REDUCTION---
+#LINEAR DIM REDUCTION#########################################################
+
 merged_counts <-
   RunPCA(merged_counts, features = VariableFeatures(object = merged_counts))
 print(merged_counts[["pca"]], dims = 1:5, nfeatures = 5)
@@ -89,12 +101,13 @@ print(merged_counts[["pca"]], dims = 1:5, nfeatures = 5)
 #Visualize PCs
 DimPlot(merged_counts, reduction = "pca")
 
-#---DIMENSIONALITY---
+#DIMENSIONALITY###############################################################
 
 #Visualize dimensionality of data set
 ElbowPlot(merged_counts)
 
-#---CLUSTERING---
+#CLUSTERING###################################################################
+
 merged_counts <- FindNeighbors(merged_counts, dims = 1:10)
 merged_counts <- FindClusters(merged_counts, resolution = 0.5)
 
@@ -104,13 +117,14 @@ head(Idents(merged_counts), 50)
 #Visualize PCs after clustering
 DimPlot(merged_counts, reduction = "pca")
 
-#---NONLINEAR DIM REDUCTION---
+#NONLINEAR DIM REDUCTION######################################################
+
 merged_counts <- RunUMAP(merged_counts, dims = 1:10)
 
 umap.plot <-
   DimPlot(merged_counts, reduction = "umap", label = TRUE) + NoLegend()
 
-#---CLUSTER BIOMARKERS---
+#CLUSTER BIOMARKERS###########################################################
 
 #Get top 50 marker genes in each cluster
 cluster0.markers <- FindMarkers(merged_counts, 0)
@@ -154,7 +168,8 @@ cluster2.1.markers <-
 cluster2.1.markers
 
 
-#---DATA VISUALIZATION---
+#DATA VIZ#####################################################################
+
 
 #Generate feature plots for specific genes
 FeaturePlot(merged_counts, "Snap25")
@@ -213,10 +228,7 @@ FeaturePlot(
   blend = TRUE
 )
 
-#---GGPLOT2 SUMMARY VISUALIZATIONS---
-
-#Import ggplot library
-library("tidyverse")
+#GGPLOT2 SUMMARY VIZ##########################################################
 
 #Find number of cells in each cluster
 cells.cluster <- table(Idents(merged_counts))
@@ -227,7 +239,7 @@ gene_percent_in_clusters <- function(gene_name) {
   for (i in 0:4) {
     merged_counts.cluster <- subset(merged_counts, idents = i)
     gene.cluster <-
-      sum(GetAssayData(object = merged_counts.cluster, slot = "data")[gene_name, ] >
+      sum(GetAssayData(object = merged_counts.cluster, slot = "data")[gene_name,] >
             0)
     gene.percent <- gene.cluster / cells.cluster[i + 1] * 100
     all_genes.percentages <- c(all_genes.percentages, gene.percent)
@@ -235,7 +247,7 @@ gene_percent_in_clusters <- function(gene_name) {
   all_genes.percentages
 }
 
-#Percent of cluster 1 gene markers 
+#Percent of cluster 1 gene markers
 Dpy19l1_percents <- gene_percent_in_clusters("Dpy19l1")
 Col27a1_percents <- gene_percent_in_clusters("Col27a1")
 Rab37_percents <- gene_percent_in_clusters("Rab37")
@@ -283,7 +295,7 @@ gene_count.data$cluster_id <-
   factor(gene_count.data$cluster_id, levels = gene_count.data$cluster_id)
 
 #Create ggplot
-library(forcats)
+
 ggplot(gene_count.data, aes(cluster_id, group = 1)) +
   geom_point(size = 3, aes(y = Dpy19l1_count, color = "Dpy19l1")) +
   geom_line(size = 1, aes(y = Dpy19l1_count, color = "Dpy19l1")) +
@@ -340,7 +352,7 @@ for (i in cluster_order) {
   }
 }
 
-#Separate cluster 1 and cluster 2 data 
+#Separate cluster 1 and cluster 2 data
 cluster1.data <- subset(genes.percentages, id == 1)
 cluster2.data <- subset(genes.percentages, id == 2)
 
@@ -351,7 +363,7 @@ cluster2.data$cluster <- as.factor(cluster2.data$cluster)
 cluster1.plot <-
   (
     ggplot(data = cluster1.data, aes(x = fct_inorder(cluster),
-                                     y = percent_gene, ))
+                                     y = percent_gene,))
     + geom_boxplot()
     + geom_dotplot(
       binaxis = 'y',
@@ -385,9 +397,9 @@ cluster2.plot <-
 
 cluster1.plot + cluster2.plot
 
-#--- CONTINUUM PLOT ---
+#CONTINUUM PLOT###############################################################
 
-#Generate interactive UMAP
+#Generate interactive UMAP to find coordinates of endpoints
 HoverLocator(plot = umap.plot,
              information = FetchData(
                merged_counts,
@@ -395,24 +407,49 @@ HoverLocator(plot = umap.plot,
              ))
 
 #Pick Q8_C08_Plate_502_Q8 and Q7_A09_Plate_503_Q7 coordinates as arbitrary seed values
-coord_start <- c(-7.756,-0.694)
+coord_start <- c(-7.756, -0.694)
 coord_end <- c(1.583, 7.709)
 coord_table <- rbind(coord_start, coord_end)
 continuum <- dist(coord_table, "manhattan")
 
-#Create dataframe with only cells from cluster L
+#Create subset with only cells from cluster L
 clusterL.data <-
   subset(
     merged_counts,
     seurat_clusters == 0 |
-    seurat_clusters == 1 |
-    seurat_clusters == 2 |
-    seurat_clusters == 3 |
-    seurat_clusters == 4
+      seurat_clusters == 1 |
+      seurat_clusters == 2 |
+      seurat_clusters == 3 |
+      seurat_clusters == 4
   )
 clusterL_coords <- clusterL.data[["umap"]]@cell.embeddings
 
-#Get Manhattan distance from starting coordinate to each cell 
+#Calculate gene expression percentages of each cell
+
+#Cluster 1
+percent.avg1 <-
+  (
+    PercentageFeatureSet(clusterL.data, pattern = "Car4") +
+      PercentageFeatureSet(clusterL.data, pattern = "Col27a1") +
+      PercentageFeatureSet(clusterL.data, pattern = "Dpy19l1") +
+      PercentageFeatureSet(clusterL.data, pattern = "Eps8l2") +
+      PercentageFeatureSet(clusterL.data, pattern = "Rab37") +
+      PercentageFeatureSet(clusterL.data, pattern = "Rgs12")
+  ) / 6
+
+#Cluster 2
+percent.avg2 <-
+  (
+    PercentageFeatureSet(clusterL.data, pattern = "Calb1") +
+      PercentageFeatureSet(clusterL.data, pattern = "Cpne6") +
+      PercentageFeatureSet(clusterL.data, pattern = "Necab1") +
+      PercentageFeatureSet(clusterL.data, pattern = "Pcdh10") +
+      PercentageFeatureSet(clusterL.data, pattern = "Scn3b") +
+      PercentageFeatureSet(clusterL.data, pattern = "Zcchc12")
+  ) / 6
+
+
+#Get Manhattan distance from starting coordinate to each cell
 cell_distances <- c()
 normalized_distances <- c()
 for (row in 1:nrow(clusterL_coords)) {
@@ -421,7 +458,7 @@ for (row in 1:nrow(clusterL_coords)) {
   start_to_cell <- dist(coords, "manhattan")
   cell_distances <- c(cell_distances, start_to_cell)
   
-  #Normalized distances with continuum scale 
+  #Normalized distances with continuum scale
   if (start_to_cell > continuum) {
     normalized_distance <- 1
   }
@@ -432,14 +469,20 @@ for (row in 1:nrow(clusterL_coords)) {
     c(normalized_distances, normalized_distance)
 }
 
-#Add distances to dataframe
-clusterL_coords <- cbind(clusterL_coords, cell_distances)
-clusterL_coords <- cbind(clusterL_coords, normalized_distances)
+#Create ggplot dataframe
+continuum.data1 <- data.frame(percent.avg1, normalized_distances)
+continuum.data2 <- data.frame(percent.avg2, normalized_distances)
 
+continuum.data1$nCount_RNA <- unlist(continuum.data1$nCount_RNA)
+continuum.data1$normalized_distances <-
+  unlist(continuum.data1$normalized_distances)
 
+continuum.data2$nCount_RNA <- unlist(continuum.data2$nCount_RNA)
+continuum.data2$normalized_distances <-
+  unlist(continuum.data2$normalized_distances)
 
+(ggplot(data = continuum.data1, aes(x = normalized_distances, y = nCount_RNA))
+  + geom_point())
 
-
-
-#umap.plot.output_notebook()
-#merged_counts[["umap"]]@cell.embeddings
+(ggplot(data = continuum.data2, aes(x = normalized_distances, y = nCount_RNA))
+  + geom_point())
