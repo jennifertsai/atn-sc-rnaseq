@@ -167,9 +167,16 @@ cluster2.1.markers <-
   FindMarkers(merged_counts, ident.1 = 2, ident.2 = 1)
 cluster2.1.markers
 
+cluster0.1.markers <-
+  FindMarkers(merged_counts, ident.1 = 0, ident.2 = 1)
+
+cluster0.2.markers <-
+  FindMarkers(merged_counts, ident.1 = 0, ident.2 = 2)
 
 #DATA VIZ#####################################################################
-FeaturePlot(merged_counts, "Dab1")
+FeaturePlot(merged_counts, "C1ql2")
+FeaturePlot(merged_counts, "Cpne7")
+
 
 #Generate feature plots for specific genes
 FeaturePlot(merged_counts, "Snap25")
@@ -233,16 +240,16 @@ FeaturePlot(merged_counts, "Scn3b")
 FeaturePlot(merged_counts, "Cpne6")
 
 
-FeaturePlot(merged_counts, "Sec61a1")
+FeaturePlot(merged_counts, "Reep5")
 FeaturePlot(merged_counts, "Ramp3")
 
 #Data visualization for cluster 1 and cluster 2 with ggplot2
 FeaturePlot(
   merged_counts,
   c("Dpy19l1", "Necab1"),
-  cols = c("lightgrey", "darkgreen", "purple"),
-  blend = TRUE
-)
+  blend = TRUE,
+  cols= c("red", "blue")
+) 
 
 #GGPLOT2 SUMMARY VIZ##########################################################
 
@@ -463,7 +470,18 @@ percent.avg2 <-
       PercentageFeatureSet(clusterL.data, pattern = "Zcchc12")
   ) / 6
 
+#Intermediate Clusters
+percent.avg0 <-
+  (
+    PercentageFeatureSet(clusterL.data, pattern = "Reep5") +
+      PercentageFeatureSet(clusterL.data, pattern = "Slc25a4") +
+      PercentageFeatureSet(clusterL.data, pattern = "Rps3a1") +
+      PercentageFeatureSet(clusterL.data, pattern = "Stmn1") +
+      PercentageFeatureSet(clusterL.data, pattern = "Tuba1a") +
+      PercentageFeatureSet(clusterL.data, pattern = "Reep5")
+  ) / 6
 
+FeaturePlot(clusterL.data, "Ldhb")
 #Get Manhattan distance from starting coordinate to each cell
 cell_distances <- c()
 normalized_distances <- c()
@@ -487,6 +505,8 @@ for (row in 1:nrow(clusterL_coords)) {
 #Create ggplot dataframe
 continuum.data1 <- data.frame(percent.avg1, normalized_distances)
 continuum.data2 <- data.frame(percent.avg2, normalized_distances)
+continuum.data0 <- data.frame(percent.avg0, normalized_distances)
+
 
 continuum.data1$nCount_RNA <- unlist(continuum.data1$nCount_RNA)
 continuum.data1$normalized_distances <-
@@ -496,11 +516,15 @@ continuum.data2$nCount_RNA <- unlist(continuum.data2$nCount_RNA)
 continuum.data2$normalized_distances <-
   unlist(continuum.data2$normalized_distances)
 
+continuum.data0$nCount_RNA <- unlist(continuum.data0$nCount_RNA)
+continuum.data0$normalized_distances <-
+  unlist(continuum.data0$normalized_distances)
+
 #Create continuum plots
 continuum.plot1 <-
   (
     ggplot(data = continuum.data1, aes(x = normalized_distances, y = nCount_RNA))
-    + geom_point()
+    + geom_point(alpha=0.25)
     + theme_classic()
     + ggtitle("Average cluster 1 gene expressions across cluster \'L\' cells")
     + xlab("Distance along continuum")
@@ -511,11 +535,21 @@ continuum.plot1 <-
 continuum.plot2 <-
   (
     ggplot(data = continuum.data2, aes(x = normalized_distances, y = nCount_RNA))
-    + geom_point()
+    + geom_point(alpha=0.25)
     + theme_classic()
     + ggtitle("Average cluster 2 gene expressions across cluster \'L\' cells")
     + xlab("Distance along continuum")
     + ylab("% of top 6 gene markers expressed")
   )
 
-continuum.plot1 + continuum.plot2
+continuum.plot0 <-
+  (
+    ggplot(data = continuum.data0, aes(x = normalized_distances, y = nCount_RNA))
+    + geom_point(alpha=0.25)
+    + theme_classic()
+    + ggtitle("Average inter. gene expressions across cluster \'L\' cells")
+    + xlab("Distance along continuum")
+    + ylab("% of top 6 gene markers expressed")
+  )
+
+continuum.plot1 + continuum.plot2 +continuum.plot0
