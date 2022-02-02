@@ -60,13 +60,13 @@ violin_plot + feature_plot_1 + feature_plot_2
 
 #Filter data set
 merged_counts <-
-  subset(merged_counts, subset = nFeature_RNA > 200 &
+  subset(merged_counts, subset = nFeature_RNA > 1500 &
            percent.mt < 5)
 
 #DATA NORMALIZATION###########################################################
 
 #Normalize feature expression measurements for each cell
-merged_counts <- NormalizeData(merged_counts)
+merged_counts <- SCTransform(merged_counts)
 #normalize with SCT
 
 #FEATURE SELECTION############################################################
@@ -109,7 +109,7 @@ ElbowPlot(merged_counts)
 #CLUSTERING###################################################################
 
 merged_counts <- FindNeighbors(merged_counts, dims = 1:10)
-merged_counts <- FindClusters(merged_counts, resolution = 0.5)
+merged_counts <- FindClusters(merged_counts, resolution = 0.10)
 
 #See cluster IDs of first 5 cells
 head(Idents(merged_counts), 50)
@@ -117,12 +117,28 @@ head(Idents(merged_counts), 50)
 #Visualize PCs after clustering
 DimPlot(merged_counts, reduction = "pca")
 
+#Visualize QC metrics after clustering
+violin_plot <-
+  VlnPlot(
+    merged_counts,
+    features = c("nFeature_RNA", "nCount_RNA", "percent.mt"),
+    ncol = 3
+  )
+feature_plot_1 <-
+  FeatureScatter(merged_counts, feature1 = "nCount_RNA", feature2 = "percent.mt")
+feature_plot_2 <-
+  FeatureScatter(merged_counts, feature1 = "nCount_RNA", feature2 = "nFeature_RNA")
+
+violin_plot + feature_plot_1 + feature_plot_2
+
 #NONLINEAR DIM REDUCTION######################################################
 
 merged_counts <- RunUMAP(merged_counts, dims = 1:10)
 
 umap.plot <-
   DimPlot(merged_counts, reduction = "umap", label = TRUE) + NoLegend()
+
+umap.plot
 
 #CLUSTER BIOMARKERS###########################################################
 
@@ -148,35 +164,27 @@ head(cluster5.markers, 50)
 cluster6.markers <- FindMarkers(merged_counts, 6)
 head(cluster6.markers, 50)
 
-cluster7.markers <- FindMarkers(merged_counts, 7)
-head(cluster7.markers, 50)
-
 #Gene markers for L shaped clump in UMAP
 clusterL.markers <-
   FindMarkers(merged_counts,
-              ident.1 = c(0, 1, 2, 3, 4),
-              ident.2 = 6)
+              ident.1 = c(0, 1, 2, 3),
+              ident.2 = 4)
 clusterL.markers
 
 #Gene markers of clusters relative to each another cluster
-cluster1.2.markers <-
-  FindMarkers(merged_counts, ident.1 = 1, ident.2 = 2)
-cluster1.2.markers
+cluster3.0.markers <-
+  FindMarkers(merged_counts, ident.1 = 3, ident.2 = 0)
+head(cluster3.0.markers, 50)
 
-cluster2.1.markers <-
-  FindMarkers(merged_counts, ident.1 = 2, ident.2 = 1)
-cluster2.1.markers
+cluster0.3.markers <-
+  FindMarkers(merged_counts, ident.1 = 0, ident.2 = 3)
+head(cluster0.3.markers, 50)
 
-cluster0.1.markers <-
-  FindMarkers(merged_counts, ident.1 = 0, ident.2 = 1)
-
-cluster0.2.markers <-
-  FindMarkers(merged_counts, ident.1 = 0, ident.2 = 2)
+cluster2.3.markers <-
+  FindMarkers(merged_counts, ident.1 = 2, ident.2 = 3)
+head(cluster2.3.markers, 50)
 
 #DATA VIZ#####################################################################
-FeaturePlot(merged_counts, "C1ql2")
-FeaturePlot(merged_counts, "Cpne7")
-
 
 #Generate feature plots for specific genes
 FeaturePlot(merged_counts, "Snap25")
@@ -185,12 +193,21 @@ FeaturePlot(merged_counts, "Slc17a7")
 FeaturePlot(merged_counts, "Slc17a6")
 
 #Generate feature plots for specific genes found in clusters
-#From cluster 1
+#From cluster 4 (new)
+FeaturePlot(merged_counts, "C1ql2")
+FeaturePlot(merged_counts, "Eepd1")
+FeaturePlot(merged_counts, "Gng13")
+FeaturePlot(merged_counts, "Slc17a7")
+FeaturePlot(merged_counts, "Rspo3")
+
+
+#From cluster 0 gene markers (new)
 FeaturePlot(merged_counts, "Car4")
+FeaturePlot(merged_counts, "Rab37")
+FeaturePlot(merged_counts, "Dpy19l1")
+FeaturePlot(merged_counts, "Kcnab3")
 FeaturePlot(merged_counts, "Eps8l2")
-FeaturePlot(merged_counts, "Rgs6")
-FeaturePlot(merged_counts, "Vamp1")
-FeaturePlot(merged_counts, "Gsg1l")
+
 
 FeaturePlot(merged_counts,
             c("Dpy19l1",
@@ -208,14 +225,14 @@ FeaturePlot(merged_counts,
               "Calb1"))
 
 
-#From cluster 2
+#From cluster 3 gene markers (new)
 FeaturePlot(merged_counts, "Necab1")
 FeaturePlot(merged_counts, "Cpne6")
 FeaturePlot(merged_counts, "Calb1")
 FeaturePlot(merged_counts, "Calb2")
-FeaturePlot(merged_counts, "6330403K07Rik")
+FeaturePlot(merged_counts, "Pcdh10")
 
-#From cluster L relative to cluster 6
+#From cluster L relative to cluster 4
 FeaturePlot(merged_counts, "Ntm")
 FeaturePlot(merged_counts, "Pcp4")
 FeaturePlot(merged_counts, "Cpne7")
